@@ -280,3 +280,11 @@ By the end of this task, the agent:
 This results in a **production-grade, explainable AI agent** that is safer and more controllable than a standard tool-calling chatbot.
 
 ---
+## 📖 References
+
+- [LangGraph Documentation](https://docs.langchain.com/oss/python/langgraph/overview)
+- [LangChain Human-in-the-Loop](https://docs.langchain.com/oss/python/langchain/human-in-the-loop)
+- [LangChain Todo List Middleware](https://reference.langchain.com/python/langchain/middleware/#langchain.agents.middleware.TodoListMiddleware)
+- [Model Context Protocol (MCP)](https://modelcontextprotocol.io)
+
+---
