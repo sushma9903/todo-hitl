@@ -183,7 +183,7 @@ This file is intentionally included to:
 ### Installation
 
 ```bash
-git clone https://github.com/<username>/todo-hitl.git
+git clone https://github.com/sushma9903/todo-hitl.git
 cd todo-hitl
 pip install -r requirements.txt
 ```
