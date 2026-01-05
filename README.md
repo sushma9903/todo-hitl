@@ -10,7 +10,7 @@ This project extends an existing **MCP + LangGraph AI agent** by adding:
 * **Human-in-the-Loop (HITL) approval before tool execution**
 * **Deterministic, explainable control flow using LangGraph**
 
-The goal of this task is to ensure that **every tool invocation is deliberate, transparent, and human-approved**, making the agent safer, more controllable, and production-ready.
+The goal of this task is to ensure that **every tool invocation is deliberate, transparent, and explicitly approved by a human**, making the agent safer, more controllable, and suitable for production-style workflows.
 
 This work builds directly on **Task 2**, which implemented a stable MCP-based AI agent with dynamic tool discovery and conversational memory.
 
@@ -21,16 +21,16 @@ This work builds directly on **Task 2**, which implemented a stable MCP-based AI
 The assignment required the following:
 
 1. **Add a Todo List tool**
-   Generate a structured list of steps describing how the agent plans to solve the user’s query *before* executing tools.
+   Generate a structured list of steps describing how the agent plans to solve the user’s query *before* executing any tools.
 
 2. **Add Human-in-the-Loop control**
-   Pause execution and request explicit user approval before running any tool.
+   Pause execution and request explicit user approval before running tools.
    *(Bonus: request approval after plan generation and before tool execution.)*
 
 3. **Evaluate LangChain middleware**
    Investigate `TodoListMiddleware` and Human-in-the-Loop middleware as referenced in the assignment.
 
-This repository demonstrates **all three**, with clear justification for architectural decisions.
+This repository demonstrates **all three**, with clear justification for the architectural decisions made.
 
 ---
 
@@ -90,7 +90,7 @@ This repository demonstrates **all three**, with clear justification for archite
 task4-todo-hitl/
 ├── agent/
 │   ├── ai-agent.py          # Baseline agent (Task 2)
-│   ├── agent-custom.py      # Final working Todo + HITL agent
+│   ├── agent-custom.py      # ✅ Final working Todo + HITL agent
 │   └── agent-prebuilt.py    # Middleware investigation (documented limitation)
 │
 ├── server/
@@ -111,7 +111,7 @@ task4-todo-hitl/
 
 This is the **original MCP + LangGraph agent** developed in Task 2.
 
-Features:
+**Features:**
 
 * Dynamic MCP tool discovery
 * Explicit LangGraph state management
@@ -122,27 +122,35 @@ This file serves as a **reference baseline** for comparison.
 
 ---
 
-### 2. `agent-custom.py` — Final Submission (Todo + HITL)
+### 2. `agent-custom.py` — ✅ Final Submission (Todo + HITL)
 
 This is the **primary and final implementation** for this task.
 
-It introduces:
+**Key additions:**
 
-* **Todo-style execution planning**
+**Todo-style execution planning**
 
-  * Generated only when tools are required
-  * Explains *what data will be fetched*, *why*, and *how it will be presented*
+* Generated only when tools are required
+* Explains:
 
-* **Human-in-the-Loop approval**
+  * What data will be fetched
+  * Why each tool is needed
+  * How results will be presented
 
-  * Execution pauses after plan generation
-  * User must explicitly approve before tools are called
-  * Tool execution can be cancelled safely
+**Human-in-the-Loop approval**
 
-* **Deterministic LangGraph flow**
+* Execution pauses after plan generation
+* User must explicitly approve before tools are called
+* Tool execution can be cancelled safely
 
-  * Agent → Planner → (Approval) → Tools → Agent
-  * No ReAct loops or uncontrolled retries
+**Deterministic LangGraph flow**
+
+```
+Agent → Planner → (Approval) → Tools → Agent
+```
+
+* No ReAct loops
+* No uncontrolled retries
 
 This approach provides **maximum transparency, control, and safety**.
 
@@ -155,21 +163,29 @@ This file contains an attempted implementation using:
 * `TodoListMiddleware`
 * LangChain agent middleware APIs referenced in the assignment
 
-**Outcome**:
+**Outcome:**
 
 ```
 ModuleNotFoundError: No module named 'langchain.agents.middleware'
 ```
 
-**Reason**:
+**Reason:**
 
 * Agent middleware is **not available** in the LangChain version used by this project
 * This is a **version-level limitation**, not a coding error
 
 This file is intentionally included to:
 
-* Show the investigation was performed
-* Justify why a custom LangGraph implementation was the correct solution
+* Show that the middleware approach was investigated
+* Justify why a custom LangGraph-based implementation was the correct choice
+
+---
+
+## 📌 Note on LangChain Middleware and Versioning
+
+The assignment references LangChain’s TodoList and Human-in-the-Loop middleware APIs.
+
+While upgrading LangChain was technically possible, doing so would have required re-validating an already stable integration involving MCP (STDIO-based tools), LangGraph state transitions, and Groq tool calling. Instead, the same behavior was implemented explicitly using LangGraph, providing deterministic execution, full visibility into agent state, and precise control over when planning and human approval occur—without introducing unnecessary dependency upgrade risk.
 
 ---
 
@@ -188,7 +204,7 @@ cd todo-hitl
 pip install -r requirements.txt
 ```
 
-Create a `.env` file:
+Create a `.env` file in the project root:
 
 ```env
 GROQ_API_KEY=your_groq_api_key_here
@@ -225,20 +241,20 @@ Approve execution? (yes/no): yes
 ### Why custom Todo planning instead of middleware?
 
 * Middleware APIs were unavailable in the current LangChain version
-* LangGraph allows **explicit, inspectable state transitions**
-* Planning logic is fully deterministic and testable
+* LangGraph enables explicit, inspectable state transitions
+* Planning logic is deterministic and testable
 
 ### Why Human-in-the-Loop before tools?
 
 * Prevents unintended side effects
-* Enables user trust and safety
-* Mirrors real-world production approval workflows
+* Enables user trust and operational safety
+* Mirrors real-world approval workflows
 
 ### Why MCP separation?
 
-* MCP server handles *only* execution
+* MCP server handles **only execution**
 * Agent handles reasoning, planning, and decisions
-* Clean separation of concerns
+* Clear separation of concerns
 
 ---
 
