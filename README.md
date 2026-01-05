@@ -1,10 +1,8 @@
----
-
 # 🤖 MCP AI Agent with Todo Planning & Human-in-the-Loop (LangGraph)
 
 ## 📌 Overview
 
-This project extends an existing **MCP + LangGraph AI agent** by adding:
+This project extends an existing MCP + LangGraph AI agent by adding:
 
 * **Structured Todo-style execution planning**
 * **Human-in-the-Loop (HITL) approval before tool execution**
