@@ -88,7 +88,7 @@ This repository demonstrates **all three**, with clear justification for the arc
 task4-todo-hitl/
 ├── agent/
 │   ├── ai-agent.py          # Baseline agent (Task 2)
-│   ├── agent-custom.py      # ✅ Final working Todo + HITL agent
+│   ├── agent-custom.py      # Final working Todo + HITL agent
 │   └── agent-prebuilt.py    # Middleware investigation (documented limitation)
 │
 ├── server/
@@ -120,7 +120,7 @@ This file serves as a **reference baseline** for comparison.
 
 ---
 
-### 2. `agent-custom.py` — ✅ Final Submission (Todo + HITL)
+### 2. `agent-custom.py` — Final Submission (Todo + HITL)
 
 This is the **primary and final implementation** for this task.
 
