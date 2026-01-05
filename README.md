@@ -258,12 +258,12 @@ Approve execution? (yes/no): yes
 
 ## 📦 Dependencies
 
-* langchain
-* langgraph
-* langchain-groq
-* mcp
-* pydantic
-* python-dotenv
+* 'langchain'
+* 'langgraph'
+* 'langchain-groq'
+* 'mcp'
+* 'pydantic'
+* 'python-dotenv'
 
 ---
 
