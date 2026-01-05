@@ -1,24 +1,40 @@
 ---
 
-# 🤖 MCP AI Agent with LangGraph
+# 🤖 MCP AI Agent with Todo Planning & Human-in-the-Loop (LangGraph)
 
-An intelligent AI agent that connects to **Model Context Protocol (MCP)** servers, dynamically discovers tools, and maintains conversation memory using **LangGraph**.
+## 📌 Overview
 
----
+This project extends an existing **MCP + LangGraph AI agent** by adding:
 
-## 📋 Overview
+* **Structured Todo-style execution planning**
+* **Human-in-the-Loop (HITL) approval before tool execution**
+* **Deterministic, explainable control flow using LangGraph**
 
-This project implements an AI agent that:
+The goal of this task is to ensure that **every tool invocation is deliberate, transparent, and human-approved**, making the agent safer, more controllable, and production-ready.
 
-* Connects to MCP servers via **STDIO transport**
-* Dynamically discovers and invokes tools based on user intent
-* Maintains full conversation history and context
-* Uses **LangGraph** for explicit state management
-* Supports weather queries, stock prices, and web search
+This work builds directly on **Task 2**, which implemented a stable MCP-based AI agent with dynamic tool discovery and conversational memory.
 
 ---
 
-## 🏗️ Architecture
+## 🎯 Objectives of This Task
+
+The assignment required the following:
+
+1. **Add a Todo List tool**
+   Generate a structured list of steps describing how the agent plans to solve the user’s query *before* executing tools.
+
+2. **Add Human-in-the-Loop control**
+   Pause execution and request explicit user approval before running any tool.
+   *(Bonus: request approval after plan generation and before tool execution.)*
+
+3. **Evaluate LangChain middleware**
+   Investigate `TodoListMiddleware` and Human-in-the-Loop middleware as referenced in the assignment.
+
+This repository demonstrates **all three**, with clear justification for architectural decisions.
+
+---
+
+## 🧠 High-Level Architecture
 
 ```
 ┌───────────────────────────────────────────────────────────┐
@@ -29,47 +45,131 @@ This project implements an AI agent that:
                               ▼
 ┌───────────────────────────────────────────────────────────┐
 │                  LangGraph AI Agent                       │
-│                       (agent.py)                          │
 │                                                           │
-│   ┌───────────────────────────────────────────────────┐   │
-│   │                  Agent Node (LLM)                 │   │
-│   │                                                   │   │
-│   │ • Interprets user intent                          │   │
-│   │ • Uses full conversation history                  │   │
-│   │ • Decides whether a tool call is required         │   │
-│   └───────────────────────┬───────────────────────────┘   │
-│                           │                               │
-│   ┌───────────────────────▼───────────────────────────┐   │
-│   │                 Tool Node (Executors)             │   │
-│   │                                                   │   │
-│   │ • Executes selected tools                         │   │
-│   │ • Validates inputs using schemas                  │   │
-│   │ • Returns results back to the agent               │   │
-│   └───────────────────────┬───────────────────────────┘   │
-└───────────────────────────┼───────────────────────────────┘
-                            │
-                            ▼
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │ Agent Node (LLM)                                     │ │
+│  │ • Interprets user intent                             │ │
+│  │ • Decides whether tools are required                 │ │
+│  └───────────────┬─────────────────────────────────────┘ │
+│                  │                                       │
+│  ┌───────────────▼─────────────────────────────────────┐ │
+│  │ Planner Node (Todo Generation)                        │ │
+│  │ • Generates a structured execution plan               │ │
+│  │ • Explains what tools will be used and why            │ │
+│  └───────────────┬─────────────────────────────────────┘ │
+│                  │   (Human approval required)           │
+│  ┌───────────────▼─────────────────────────────────────┐ │
+│  │ Tool Node (MCP Executors)                             │ │
+│  │ • Executes approved MCP tools                         │ │
+│  │ • Returns results to the agent                        │ │
+│  └─────────────────────────────────────────────────────┘ │
+└─────────────────────────────┼─────────────────────────────┘
+                              │
+                              ▼
 ┌───────────────────────────────────────────────────────────┐
 │                    MCP Client (STDIO)                     │
-│                                                           │
-│ • Spawns MCP server as a subprocess                       │
-│ • Discovers available tools dynamically                   │
-│ • Sends and receives MCP protocol messages                │
-└───────────────────────────┬───────────────────────────────┘
-                            │
-                            ▼
+│ • Discovers tools dynamically                             │
+│ • Sends tool calls via MCP protocol                       │
+└─────────────────────────────┬─────────────────────────────┘
+                              │
+                              ▼
 ┌───────────────────────────────────────────────────────────┐
 │                      MCP Server                           │
-│                    (server/main.py)                       │
-│                                                           │
 │ • get_weather                                             │
 │ • get_stock_price                                         │
 │ • web_search                                              │
-│                                                           │
-│ Exposes tools via MCP with JSON schemas                   │
-│ Contains no agent or decision logic                       │
+│ • No agent logic                                          │
 └───────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 📁 Repository Structure
+
+```
+task4-todo-hitl/
+├── agent/
+│   ├── ai-agent.py          # Baseline agent (Task 2)
+│   ├── agent-custom.py      # Final working Todo + HITL agent
+│   └── agent-prebuilt.py    # Middleware investigation (documented limitation)
+│
+├── server/
+│   ├── backend/
+│   ├── tools/
+│   └── main.py              # MCP tool server
+│
+├── README.md
+├── requirements.txt
+└── .gitignore
+```
+
+---
+
+## 🤖 Agent Variants Explained
+
+### 1. `ai-agent.py` — Baseline (Task 2)
+
+This is the **original MCP + LangGraph agent** developed in Task 2.
+
+Features:
+
+* Dynamic MCP tool discovery
+* Explicit LangGraph state management
+* Conversational memory
+* Tool invocation without planning or approval
+
+This file serves as a **reference baseline** for comparison.
+
+---
+
+### 2. `agent-custom.py` — Final Submission (Todo + HITL)
+
+This is the **primary and final implementation** for this task.
+
+It introduces:
+
+* **Todo-style execution planning**
+
+  * Generated only when tools are required
+  * Explains *what data will be fetched*, *why*, and *how it will be presented*
+
+* **Human-in-the-Loop approval**
+
+  * Execution pauses after plan generation
+  * User must explicitly approve before tools are called
+  * Tool execution can be cancelled safely
+
+* **Deterministic LangGraph flow**
+
+  * Agent → Planner → (Approval) → Tools → Agent
+  * No ReAct loops or uncontrolled retries
+
+This approach provides **maximum transparency, control, and safety**.
+
+---
+
+### 3. `agent-prebuilt.py` — Middleware Investigation
+
+This file contains an attempted implementation using:
+
+* `TodoListMiddleware`
+* LangChain agent middleware APIs referenced in the assignment
+
+**Outcome**:
+
+```
+ModuleNotFoundError: No module named 'langchain.agents.middleware'
+```
+
+**Reason**:
+
+* Agent middleware is **not available** in the LangChain version used by this project
+* This is a **version-level limitation**, not a coding error
+
+This file is intentionally included to:
+
+* Show the investigation was performed
+* Justify why a custom LangGraph implementation was the correct solution
 
 ---
 
@@ -77,239 +177,92 @@ This project implements an AI agent that:
 
 ### Prerequisites
 
-* Python **3.9+**
+* Python 3.9+
 * Groq API key
-* MCP server (included in `server/main.py`)
-
----
 
 ### Installation
 
-Clone the repository:
-
 ```bash
-git clone <your-repository-url>
-cd <repository-name>
-```
-
-Install dependencies:
-
-```bash
+git clone https://github.com/<username>/todo-hitl.git
+cd todo-hitl
 pip install -r requirements.txt
 ```
 
-Set up environment variables:
-
-Create a `.env` file in the root directory:
+Create a `.env` file:
 
 ```env
 GROQ_API_KEY=your_groq_api_key_here
 ```
 
-Run the agent:
+### Run the Agent
 
 ```bash
-python agent/agent.py
+python agent/agent-custom.py
 ```
+
+---
+
+## 🧪 Example Interaction
+
+```
+You: what is the weather in London?
+
+Agent's Plan:
+1. Fetch current weather data for London using the get_weather MCP tool
+2. This tool provides real-time weather data required to answer the query
+3. Present temperature, humidity, and wind conditions in a clear response
+
+Planned Tool Calls:
+  - get_weather {'city': 'London'}
+
+Approve execution? (yes/no): yes
+```
+
+---
+
+## 🧩 Key Design Decisions
+
+### Why custom Todo planning instead of middleware?
+
+* Middleware APIs were unavailable in the current LangChain version
+* LangGraph allows **explicit, inspectable state transitions**
+* Planning logic is fully deterministic and testable
+
+### Why Human-in-the-Loop before tools?
+
+* Prevents unintended side effects
+* Enables user trust and safety
+* Mirrors real-world production approval workflows
+
+### Why MCP separation?
+
+* MCP server handles *only* execution
+* Agent handles reasoning, planning, and decisions
+* Clean separation of concerns
 
 ---
 
 ## 📦 Dependencies
 
-* `langchain-groq>=0.2.0`
-* `langchain>=0.3.0`
-* `langgraph>=0.2.0`
-* `python-dotenv>=1.0.0`
-* `mcp>=1.0.0`
-* `pydantic>=2.0.0`
-
-Install all at once:
-
-```bash
-pip install langchain-groq langchain langgraph python-dotenv mcp pydantic
-```
+* langchain
+* langgraph
+* langchain-groq
+* mcp
+* pydantic
+* python-dotenv
 
 ---
 
-## 🎯 Usage Examples
+## 🏁 Summary
 
-### Basic Queries
+By the end of this task, the agent:
 
-```
-You: What is the weather in Paris?
-Agent: The current weather in Paris is a clear sky with a temperature of 3.87°C, humidity of 73%, and wind speed of 4.12 m/s.
-```
+* Plans before acting
+* Explains its intent clearly
+* Requires explicit human approval
+* Executes tools safely and deterministically
+* Knows when **not** to proceed
 
-```
-You: What is the stock price of TSLA?
-Agent: The current stock price of TSLA is $485.4.
-```
-
-```
-You: Search the web for latest AI news
-Agent: Based on the search results, here are the latest AI-related updates...
-```
-
----
-
-### Context-Aware Conversations
-
-```
-You: What is the weather in London?
-You: What about Tokyo?
-You: What about the previous city?
-Agent: London.
-```
-
----
-
-### Memory Recall
-
-```
-You: What questions have I asked you?
-Agent: You have asked the following questions:
-1. What is the weather in Paris?
-2. What is the stock price of TSLA?
-3. Search the web for latest AI news
-...
-```
-
----
-
-## 🔧 Technical Details
-
-### Component Breakdown
-
-#### 1. MCPClient
-
-* Manages STDIO connection to MCP server
-* Spawns server process as a subprocess
-* Discovers available tools dynamically via MCP protocol
-
-#### 2. Tool Conversion
-
-* Converts MCP tool schemas to LangChain `StructuredTools`
-* Maps JSON schema types to Python types
-* Uses Pydantic models for runtime validation
-* Executes tools asynchronously
-
-#### 3. LangGraph Agent
-
-* `StateGraph` manages agent execution flow
-* Agent node performs reasoning using full conversation history
-* Tool node executes MCP tools when required
-* Conditional routing prevents infinite loops
-
-#### 4. Memory System
-
-* Maintains full conversation history in memory
-* Passes entire message history to the LLM each turn
-* Enables contextual understanding and recall
-* No external database required
-
----
-
-## 🛠️ Customization
-
-### Adding New Tools
-
-1. Add a tool to the MCP server (`server/main.py`)
-2. Restart the agent
-
-The agent will automatically discover the new tool.
-
----
-
-### Changing LLM Model
-
-```python
-llm = ChatGroq(
-    groq_api_key=GROQ_API_KEY,
-    model_name="llama-3.1-70b-versatile",
-    temperature=0
-)
-```
-
----
-
-### Adjusting System Prompt
-
-Modify the `system_message` inside `run_agent()`:
-
-```python
-system_message = SystemMessage(content="""
-Your custom instructions here...
-""")
-```
-
----
-
-## 🧪 Testing
-
-### Suggested Test Prompts
-
-**Tool Invocation**
-
-* What is the weather in Paris?
-* What is the stock price of AAPL?
-* Search the web for Python 3.12 features
-
-**Memory & Context**
-
-* What is the weather in London?
-* What about Tokyo?
-* What was the temperature in the previous city?
-
----
-
-## 🐛 Troubleshooting and Notes
-
-* **`GROQ_API_KEY not found`**
-  Ensure a `.env` file exists in the project root with a valid `GROQ_API_KEY`, and restart the terminal.
-
-* **`MCP session is not initialized`**
-  Indicates the MCP server did not start correctly. Verify `server/main.py` exists and the client connects before discovering or invoking tools.
-
-* **Agent looping or stopping unexpectedly (ReAct)**
-  While using ReAct, the agent sometimes re-invoked tools due to dynamic MCP schemas. This was resolved by switching to **LangGraph**, which provides explicit state transitions and reliable termination.
-
-* **Tool input validation errors**
-  Occurred when generated tool inputs did not exactly match MCP schemas. Fixed by generating schema-driven tools directly from MCP definitions.
-
-* **Follow-up questions not using context**
-  Initially, conversation history was stored but not reasoned over. Using **LangGraph state** enabled correct handling of contextual and memory-based queries.
-
----
-
-## 📚 Key Concepts
-
-This project is intentionally designed with a clear separation of responsibilities:
-
-- **MCP Server** acts as a stable tool layer  
-  It exposes real-world capabilities (weather, stocks, web search) without embedding any AI logic.
-
-- **AI Agent (LangGraph)** handles reasoning and decision-making  
-  The agent interprets user intent, decides whether a tool is required, and produces the final response.
-
-- **LangGraph State Management** ensures predictable execution  
-  Using an explicit graph prevents common agent issues such as repeated tool calls or infinite loops.
-
-- **Conversation Memory** enables contextual understanding  
-  The agent retains full conversation history, allowing follow-up questions and memory-based responses.
-
-This separation makes the system easier to extend, debug, and reason about compared to tightly coupled agent-tool implementations.
-
----
-## 📖 References
-
-- [LangGraph Documentation](https://docs.langchain.com/oss/python/langgraph/overview)
-- [LangChain Agents](https://docs.langchain.com/oss/javascript/langchain/agents)
-- [LangChain Tools](https://python.langchain.com/docs/modules/tools/)
-  
----
-
-## 👤 Author
-
-Built as part of an MCP integration learning project.
+This results in a **production-grade, explainable AI agent** that is safer and more controllable than a standard tool-calling chatbot.
 
 ---
